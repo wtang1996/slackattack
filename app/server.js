@@ -1,5 +1,6 @@
-// example bot
 console.log('starting bot');
+
+/* Seting up botkit under instructions*/
 
 import botkit from 'botkit';
 
@@ -25,11 +26,51 @@ controller.setupWebserver(process.env.PORT || 3001, (err, webserver) => {
   });
 });
 
-// example hello response
-controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
-  bot.reply(message, 'If you tell me that you are hungry, I can suggest places to eat for you!');
+/* Setting up Yelp, https://github.com/olalonde/node-yelp*/
+const Yelp = require('yelp');
+
+const yelp = new Yelp({
+  consumer_key: 'YD89DeGKd3ly4sYj-dxRzw',
+  consumer_secret: 'hXSHDZptocAePv4GdspK41bIQr0',
+  token: 'sNo1I-Lx8q_x-YbpzJEm8JxF1H49ZXpP',
+  token_secret: 'Ryg-Jb0CN2e1gFgwlJ_XVX06jB0',
 });
 
+/* Setting up Forecast, https://www.npmjs.com/package/forecast*/
+// Require the module
+const Forecast = require('forecast');
+
+// Initialize
+const forecast = new Forecast({
+  service: 'forecast.io',
+  key: '7212eb0920695eb3b920f185c3222f62',
+  units: 'celcius', // Only the first letter is parsed
+  cache: true,      // Cache API requests?
+  ttl: {            // How long to cache requests. Uses syntax from moment.js: http://momentjs.com/docs/#/durations/creating/
+    minutes: 27,
+    seconds: 45,
+  },
+});
+
+/* Setting up node-geocoder, https://www.npmjs.com/package/node-geocoder*/
+const nodeGeocoder = require('node-geocoder');
+
+const options = {
+  provider: 'google',
+  // Optional depending on the providers
+  httpAdapter: 'https', // Default
+  apiKey: 'AIzaSyDsavbn0tQHYBKLj4w2Xp340IoKJVE--EA', // for Mapquest, OpenCage, Google Premier
+  formatter: null,         // 'gpx', 'string', ...
+};
+
+const geocoder = nodeGeocoder(options);
+
+// help response
+controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
+  bot.reply(message, 'If you tell me that you are hungry, I can suggest places to eat for you! Also let me know if you want to learn about weather!');
+});
+
+// example hello response
 controller.hears(['hello', 'hi', 'weijiatang'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   bot.api.users.info({ user: message.user }, (err, res) => {
     if (res) {
@@ -40,16 +81,7 @@ controller.hears(['hello', 'hi', 'weijiatang'], ['direct_message', 'direct_menti
   });
 });
 
-// Request API access: http://www.yelp.com/developers/getting_started/api_access
-const Yelp = require('yelp');
-
-const yelp = new Yelp({
-  consumer_key: 'YD89DeGKd3ly4sYj-dxRzw',
-  consumer_secret: 'hXSHDZptocAePv4GdspK41bIQr0',
-  token: 'sNo1I-Lx8q_x-YbpzJEm8JxF1H49ZXpP',
-  token_secret: 'Ryg-Jb0CN2e1gFgwlJ_XVX06jB0',
-});
-
+// start a conversation when hears hungry
 controller.hears(['hungry'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   const yelpResults = (response, convo) => {
     convo.say('Here\'s the list of top 5 matched restaurants near you!');
@@ -120,34 +152,8 @@ controller.hears(['hungry'], ['direct_message', 'direct_mention', 'mention'], (b
   bot.startConversation(message, askRecommend);
 });
 
-// Require the module
-const Forecast = require('forecast');
-
-// Initialize
-const forecast = new Forecast({
-  service: 'forecast.io',
-  key: '7212eb0920695eb3b920f185c3222f62',
-  units: 'celcius', // Only the first letter is parsed
-  cache: true,      // Cache API requests?
-  ttl: {            // How long to cache requests. Uses syntax from moment.js: http://momentjs.com/docs/#/durations/creating/
-    minutes: 27,
-    seconds: 45,
-  },
-});
-
-const NodeGeocoder = require('node-geocoder');
-
-const options = {
-  provider: 'google',
-  // Optional depending on the providers
-  httpAdapter: 'https', // Default
-  apiKey: 'AIzaSyDsavbn0tQHYBKLj4w2Xp340IoKJVE--EA', // for Mapquest, OpenCage, Google Premier
-  formatter: null,         // 'gpx', 'string', ...
-};
-
-const geocoder = NodeGeocoder(options);
-
-controller.hears(['weather', 'forecast'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
+// start a conversation when hears weather
+controller.hears(['weather'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   const weatherResults = (response, convo) => {
     convo.say(`The current weather of ${convo.extractResponse('location')}:`);
     geocoder.geocode(convo.extractResponse('location'))
@@ -203,6 +209,7 @@ controller.hears(['weather', 'forecast'], ['direct_message', 'direct_mention', '
   bot.startConversation(message, askWeather);
 });
 
+// default response
 controller.hears(['(.*)'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   const key = message.match[1];
   if (key !== 'help' && key !== 'hello' && key !== 'hi' && key !== 'weijiatang' && key !== 'hungry') {
@@ -211,6 +218,8 @@ controller.hears(['(.*)'], ['direct_message', 'direct_mention', 'mention'], (bot
   return undefined;
 });
 
+// outgoing webhook wake up
 controller.on('outgoing_webhook', (bot, message) => {
+  console.log('outgoing~');
   bot.replyPublic(message, 'yeah I am awake');
 });
