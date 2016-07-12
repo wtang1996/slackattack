@@ -29,8 +29,8 @@ controller.on('outgoing_webhook', (bot, message) => {
   bot.replyPublic(message, 'yeah I am awake');
 });
 
-controller.hears(['*'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
-  bot.reply(message, 'I do not understand you lol');
+controller.on('message_received', (bot, message) => {
+  bot.reply(message, 'I do not understand!');
 });
 
 // example hello response
