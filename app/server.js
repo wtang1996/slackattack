@@ -29,7 +29,7 @@ controller.on('outgoing_webhook', (bot, message) => {
   bot.replyPublic(message, 'yeah I am awake');
 });
 
-controller.on('message_received', (bot, message) => {
+controller.on(['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   bot.reply(message, 'I do not understand!');
 });
 
