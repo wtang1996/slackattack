@@ -4,12 +4,9 @@ console.log('starting bot');
 import botkit from 'botkit';
 
 // botkit controller
-let Botkit = require('botkit'),
-  mongoStorage = require('botkit-storage-mongo')({mongoUri: '...'}),
-  const controller = botkit.slackbot({
-    debug: false,
-    storage: mongoStorage
-  })
+const controller = botkit.slackbot({
+  debug: false,
+});
 
 // initialize slackbot
 const slackbot = controller.spawn({
@@ -34,7 +31,7 @@ controller.on('outgoing_webhook', (bot, message) => {
 
 controller.on('message', (bot, message) => {
   bot.reply(message, 'I do not understand you lol');
-})
+});
 
 // example hello response
 controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
