@@ -162,6 +162,7 @@ controller.hears(['weather', 'forecast'], ['direct_message', 'direct_mention', '
           convo.say(`Probability of precipitation: ${weather.currently.precipProbability}`);
           convo.say(`Temperature: ${weather.currently.temperature}`);
           convo.say(`Humidity: ${weather.currently.humidity}`);
+          return undefined;
         });
       });
   };
