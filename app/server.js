@@ -4,9 +4,12 @@ console.log('starting bot');
 import botkit from 'botkit';
 
 // botkit controller
-const controller = botkit.slackbot({
-  debug: false,
-});
+let Botkit = require('botkit'),
+  mongoStorage = require('botkit-storage-mongo')({mongoUri: '...'}),
+  const controller = botkit.slackbot({
+    debug: false,
+    storage: mongoStorage
+  })
 
 // initialize slackbot
 const slackbot = controller.spawn({
@@ -24,6 +27,14 @@ controller.setupWebserver(process.env.PORT || 3001, (err, webserver) => {
     if (err) { throw new Error(err); }
   });
 });
+
+controller.on('outgoing_webhook', (bot, message) => {
+  bot.replyPublic(message, 'yeah I am awake');
+});
+
+controller.on('message', (bot, message) => {
+  bot.reply(message, 'I do not understand you lol');
+})
 
 // example hello response
 controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
@@ -48,13 +59,6 @@ const yelp = new Yelp({
   consumer_secret: 'hXSHDZptocAePv4GdspK41bIQr0',
   token: 'sNo1I-Lx8q_x-YbpzJEm8JxF1H49ZXpP',
   token_secret: 'Ryg-Jb0CN2e1gFgwlJ_XVX06jB0',
-});
-
-yelp.search({ term: 'sushi', location: 'hanover, nh' })
-.then((data) => {
-  data.businesses.forEach(business => {
-    console.log(business.rating);
-  });
 });
 
 controller.hears(['hungry'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
@@ -125,12 +129,4 @@ controller.hears(['hungry'], ['direct_message', 'direct_mention', 'mention'], (b
   };
 
   bot.startConversation(message, askRecommend);
-});
-
-controller.on('me_message', (bot, message) => {
-  bot.reply(message, 'What are you talking about?');
-});
-
-controller.on('outgoing_webhook', (bot, message) => {
-  bot.replyPublic(message, 'yeah yeah');
 });
