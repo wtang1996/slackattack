@@ -29,8 +29,13 @@ controller.on('outgoing_webhook', (bot, message) => {
   bot.replyPublic(message, 'yeah I am awake');
 });
 
-controller.on(['direct_message', 'direct_mention', 'mention'], (bot, message) => {
-  bot.reply(message, 'I do not understand!');
+// example hello response
+controller.hears(['(.*)'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
+  const key = message.match[1];
+  if (key !== 'help' && key !== 'hello' && key !== 'hi' && key !== 'weijiatang' && key !== 'hungry') {
+    return bot.reply(message, 'lol I am confused.');
+  }
+  return undefined;
 });
 
 // example hello response
