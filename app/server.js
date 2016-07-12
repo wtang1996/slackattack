@@ -30,15 +30,6 @@ controller.on('outgoing_webhook', (bot, message) => {
 });
 
 // example hello response
-controller.hears(['(.*)'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
-  const key = message.match[1];
-  if (key !== 'help' && key !== 'hello' && key !== 'hi' && key !== 'weijiatang' && key !== 'hungry') {
-    return bot.reply(message, 'lol I am confused.');
-  }
-  return undefined;
-});
-
-// example hello response
 controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   bot.reply(message, 'If you tell me that you are hungry, I can suggest places to eat for you!');
 });
@@ -131,4 +122,12 @@ controller.hears(['hungry'], ['direct_message', 'direct_mention', 'mention'], (b
   };
 
   bot.startConversation(message, askRecommend);
+});
+
+controller.hears(['(.*)'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
+  const key = message.match[1];
+  if (key !== 'help' && key !== 'hello' && key !== 'hi' && key !== 'weijiatang' && key !== 'hungry') {
+    return bot.reply(message, 'lol I am confused.');
+  }
+  return undefined;
 });
