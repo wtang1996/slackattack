@@ -25,10 +25,6 @@ controller.setupWebserver(process.env.PORT || 3001, (err, webserver) => {
   });
 });
 
-controller.on('outgoing_webhook', (bot, message) => {
-  bot.reply(message, 'yeah I am awake');
-});
-
 // example hello response
 controller.hears(['help'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   bot.reply(message, 'If you tell me that you are hungry, I can suggest places to eat for you!');
@@ -124,10 +120,96 @@ controller.hears(['hungry'], ['direct_message', 'direct_mention', 'mention'], (b
   bot.startConversation(message, askRecommend);
 });
 
+// Require the module
+const Forecast = require('forecast');
+
+// Initialize
+const forecast = new Forecast({
+  service: 'forecast.io',
+  key: '7212eb0920695eb3b920f185c3222f62',
+  units: 'celcius', // Only the first letter is parsed
+  cache: true,      // Cache API requests?
+  ttl: {            // How long to cache requests. Uses syntax from moment.js: http://momentjs.com/docs/#/durations/creating/
+    minutes: 27,
+    seconds: 45,
+  },
+});
+
+const NodeGeocoder = require('node-geocoder');
+
+const options = {
+  provider: 'google',
+  // Optional depending on the providers
+  httpAdapter: 'https', // Default
+  apiKey: 'AIzaSyDsavbn0tQHYBKLj4w2Xp340IoKJVE--EA', // for Mapquest, OpenCage, Google Premier
+  formatter: null,         // 'gpx', 'string', ...
+};
+
+const geocoder = NodeGeocoder(options);
+
+controller.hears(['weather', 'forecast'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
+  const weatherResults = (response, convo) => {
+    convo.say(`The current weather of ${convo.extractResponse('location')}:`);
+    geocoder.geocode(convo.extractResponse('location'))
+      .then((result) => {
+        const latitude = result[0].latitude;
+        const longitude = result[0].longitude;
+        forecast.get([latitude, longitude], (err, weather) => {
+          if (err) return console.dir(err);
+          console.log(weather);
+          convo.say(`Summary: ${weather.currently.summary}`);
+          convo.say(`Intensity of precipitation: ${weather.currently.precipIntensity}`);
+          convo.say(`Probability of precipitation: ${weather.currently.precipProbability}`);
+          convo.say(`Temperature: ${weather.currently.temperature}`);
+          convo.say(`Humidity: ${weather.currently.humidity}`);
+        });
+      });
+  };
+  const askLocation = (response, convo) => {
+    convo.ask('You want to display the weather of which region?', () => {
+      convo.say('Ok! one sec. Pulling up results.');
+      weatherResults(response, convo);
+      convo.next();
+    }, { key: 'location' });
+  };
+  const askWeather = (response, convo) => {
+    convo.ask('Would you like some weather information?', [
+      {
+        pattern: bot.utterances.yes,
+        callback: () => {
+          convo.say('Great!');
+          askLocation(response, convo);
+          convo.next();
+        },
+      },
+      {
+        pattern: bot.utterances.no,
+        callback: () => {
+          convo.say('Perhaps later...');
+          convo.next();
+        },
+      },
+      {
+        default: true,
+        callback: () => {
+          convo.say('What are you talking about?');
+          convo.next();
+        },
+      },
+    ]);
+  };
+
+  bot.startConversation(message, askWeather);
+});
+
 controller.hears(['(.*)'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   const key = message.match[1];
   if (key !== 'help' && key !== 'hello' && key !== 'hi' && key !== 'weijiatang' && key !== 'hungry') {
     return bot.reply(message, 'lol I am confused.');
   }
   return undefined;
+});
+
+controller.on('outgoing_webhook', (bot, message) => {
+  bot.replyPublic(message, 'yeah I am awake');
 });
